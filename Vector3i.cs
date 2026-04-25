@@ -1,8 +1,10 @@
-﻿namespace RubiksCube;
+﻿using System.Numerics;
 
-internal readonly record struct Vector3(int X, int Y, int Z)
+namespace RubiksCube;
+
+internal readonly record struct Vector3i(int X, int Y, int Z)
 {
-    public System.Numerics.Vector3 ToVector3() => new(X, Y, Z);
+    public Vector3 ToVector3() => new(X, Y, Z);
 
     public Direction ToDir()
     {

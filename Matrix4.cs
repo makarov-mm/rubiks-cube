@@ -7,7 +7,6 @@ internal struct Matrix4
     public Matrix4(bool identity)
     {
         M = new float[16];
-
         if (identity)
         {
             M[0] = 1.0f;
@@ -18,6 +17,18 @@ internal struct Matrix4
     }
 
     public static Matrix4 Identity() => new(true);
+
+    public static Matrix4 Ortho(float left, float right, float bottom, float top, float zNear, float zFar)
+    {
+        var r = Identity();
+        r.M[0] = 2.0f / (right - left);
+        r.M[5] = 2.0f / (top - bottom);
+        r.M[10] = -2.0f / (zFar - zNear);
+        r.M[12] = -(right + left) / (right - left);
+        r.M[13] = -(top + bottom) / (top - bottom);
+        r.M[14] = -(zFar + zNear) / (zFar - zNear);
+        return r;
+    }
 
     public static Matrix4 Perspective(float fovYRadians, float aspect, float zNear, float zFar)
     {

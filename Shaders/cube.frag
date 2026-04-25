@@ -8,7 +8,7 @@ in vec3 vLocalPos;
 uniform vec3 uColor;
 uniform vec3 uCameraPos;
 uniform float uTime;
-uniform int uMaterial;      // 0 = sticker, 1 = black plastic body, 2 = floor grid
+uniform int uMaterial;      // 0 = sticker, 1 = black plastic body, 2 = floor grid, 3 = overlay
 uniform float uAlpha;
 uniform int uReflection;
 
@@ -73,6 +73,12 @@ vec3 shadeSurface(vec3 baseColor, float roughness, float reflectionBoost)
 
 void main()
 {
+    if (uMaterial == 3)
+    {
+        fragColor = vec4(uColor, uAlpha);
+        return;
+    }
+
     if (uMaterial == 2)
     {
         vec2 p = (vUv - vec2(0.5)) * 18.0;

@@ -2,7 +2,7 @@
 
 namespace RubiksCube;
 
-internal static class GL
+internal static class Gl
 {
     public const uint GL_COLOR_BUFFER_BIT = 0x00004000;
     public const uint GL_DEPTH_BUFFER_BIT = 0x00000100;
@@ -176,7 +176,6 @@ internal static class GL
     {
         IntPtr ptr = Wgl.wglGetProcAddress(name);
         long value = ptr.ToInt64();
-
         if (ptr == IntPtr.Zero || value == 1 || value == 2 || value == 3 || value == -1)
         {
             IntPtr module = Wgl.LoadLibrary("opengl32.dll");

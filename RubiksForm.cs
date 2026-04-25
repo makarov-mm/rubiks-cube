@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Timer = System.Windows.Forms.Timer;
 
@@ -23,6 +24,8 @@ internal sealed class RubiksForm : Form
     private Mesh _cubeMesh = null!;
     private Mesh _stickerMesh = null!;
     private Mesh _floorMesh = null!;
+    private Mesh _overlayPanelMesh = null!;
+    private Mesh _overlayTextMesh = null!;
 
     private readonly List<Cubie> _cubies = new();
     private readonly Queue<Move> _moveQueue = new();
@@ -122,7 +125,7 @@ internal sealed class RubiksForm : Form
     {
         base.OnResize(e);
         if (_hdc != IntPtr.Zero && ClientSize.Width > 0 && ClientSize.Height > 0)
-            GL.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
+            Gl.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
     }
 
     protected override void OnMouseDown(MouseEventArgs e)
@@ -234,41 +237,54 @@ internal sealed class RubiksForm : Form
         if (!Wgl.wglMakeCurrent(_hdc, _hrc))
             throw new InvalidOperationException("wglMakeCurrent failed.");
 
-        GL.LoadFunctions();
+        Gl.LoadFunctions();
 
-        string version = GL.GetString(GL.GL_VERSION);
+        string version = Gl.GetString(Gl.GL_VERSION);
         Text = $"Rubik's Cube - C# WinForms OpenGL Shader Demo   |   OpenGL {version}";
 
-        GL.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
-        GL.ClearColor(0.003f, 0.005f, 0.010f, 1.0f);
-        GL.Enable(GL.GL_DEPTH_TEST);
-        GL.DepthFunc(GL.GL_LEQUAL);
-        GL.Enable(GL.GL_CULL_FACE);
-        GL.CullFace(GL.GL_BACK);
-        GL.Enable(GL.GL_BLEND);
-        GL.BlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
+        Gl.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
+        Gl.ClearColor(0.003f, 0.005f, 0.010f, 1.0f);
+        Gl.Enable(Gl.GL_DEPTH_TEST);
+        Gl.DepthFunc(Gl.GL_LEQUAL);
+        Gl.Enable(Gl.GL_CULL_FACE);
+        Gl.CullFace(Gl.GL_BACK);
+        Gl.Enable(Gl.GL_BLEND);
+        Gl.BlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
     }
 
     private void InitScene()
     {
-        _program = CreateProgram(
-            File.ReadAllText(Files.ShaderVertex),
-            File.ReadAllText(Files.ShaderFragment));
-        GL.UseProgram(_program);
+        _program = CreateProgram(File.ReadAllText(Files.ShaderVertex), File.ReadAllText(Files.ShaderFragment));
+        Gl.UseProgram(_program);
 
-        _uModel = GL.GetUniformLocation(_program, "uModel");
-        _uView = GL.GetUniformLocation(_program, "uView");
-        _uProjection = GL.GetUniformLocation(_program, "uProjection");
-        _uColor = GL.GetUniformLocation(_program, "uColor");
-        _uCameraPos = GL.GetUniformLocation(_program, "uCameraPos");
-        _uTime = GL.GetUniformLocation(_program, "uTime");
-        _uMaterial = GL.GetUniformLocation(_program, "uMaterial");
-        _uAlpha = GL.GetUniformLocation(_program, "uAlpha");
-        _uReflection = GL.GetUniformLocation(_program, "uReflection");
+        _uModel = Gl.GetUniformLocation(_program, "uModel");
+        _uView = Gl.GetUniformLocation(_program, "uView");
+        _uProjection = Gl.GetUniformLocation(_program, "uProjection");
+        _uColor = Gl.GetUniformLocation(_program, "uColor");
+        _uCameraPos = Gl.GetUniformLocation(_program, "uCameraPos");
+        _uTime = Gl.GetUniformLocation(_program, "uTime");
+        _uMaterial = Gl.GetUniformLocation(_program, "uMaterial");
+        _uAlpha = Gl.GetUniformLocation(_program, "uAlpha");
+        _uReflection = Gl.GetUniformLocation(_program, "uReflection");
 
         _cubeMesh = Mesh.CreateCube();
         _stickerMesh = Mesh.CreateStickerPlane();
         _floorMesh = Mesh.CreateFloorPlane();
+        _overlayPanelMesh = Mesh.CreateScreenQuad(14.0f, 14.0f, 330.0f, 224.0f);
+        _overlayTextMesh = Mesh.CreateBitmapText(new[]
+        {
+            "CONTROLS",
+            "",
+            "MOUSE DRAG   ROTATE VIEW",
+            "MOUSE WHEEL  ZOOM",
+            "",
+            "U D L R F B  ROTATE FACES",
+            "SHIFT + KEY  REVERSE MOVE",
+            "S            SCRAMBLE",
+            "CTRL + R     RESET CUBE",
+            "HOME         RESET CAMERA",
+            "ESC          CLOSE"
+        }, 26.0f, 28.0f, 2.0f, 4.0f);
     }
 
     private void InitRubiksCube()
@@ -279,7 +295,7 @@ internal sealed class RubiksForm : Form
             for (int y = -1; y <= 1; y++)
                 for (int z = -1; z <= 1; z++)
                 {
-                    var cubie = new Cubie(new Vector3(x, y, z));
+                    var cubie = new Cubie(new Vector3i(x, y, z));
 
                     if (x == 1) cubie.Stickers[Direction.Right] = StickerColor.Red;
                     if (x == -1) cubie.Stickers[Direction.Left] = StickerColor.Orange;
@@ -369,42 +385,69 @@ internal sealed class RubiksForm : Form
 
     private void Render()
     {
-        GL.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
-        GL.Clear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT);
-        GL.UseProgram(_program);
+        Gl.Viewport(0, 0, ClientSize.Width, ClientSize.Height);
+        Gl.Clear(Gl.GL_COLOR_BUFFER_BIT | Gl.GL_DEPTH_BUFFER_BIT);
+        Gl.UseProgram(_program);
 
         float aspect = ClientSize.Width / Math.Max(1.0f, (float)ClientSize.Height);
         Matrix4 view = Matrix4.Translation(0.0f, 0.0f, -_distance);
         Matrix4 projection = Matrix4.Perspective(0.72f, aspect, 0.05f, 80.0f);
         Matrix4 sceneRotation = Matrix4.Multiply(Matrix4.RotationX(_pitch), Matrix4.RotationY(_yaw));
 
-        GL.UniformMatrix4fv(_uView, view);
-        GL.UniformMatrix4fv(_uProjection, projection);
-        GL.Uniform3f(_uCameraPos, 0.0f, 0.0f, _distance);
-        GL.Uniform1f(_uTime, (float)_clock.Elapsed.TotalSeconds);
+        Gl.UniformMatrix4fv(_uView, view);
+        Gl.UniformMatrix4fv(_uProjection, projection);
+        Gl.Uniform3f(_uCameraPos, 0.0f, 0.0f, _distance);
+        Gl.Uniform1f(_uTime, (float)_clock.Elapsed.TotalSeconds);
 
         Matrix4 mirror = Matrix4.Multiply(Matrix4.Translation(0.0f, FloorY * 2.0f, 0.0f), Matrix4.Scale(1.0f, -1.0f, 1.0f));
 
-        GL.Disable(GL.GL_CULL_FACE);
-        GL.Enable(GL.GL_BLEND);
-        GL.BlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
-        GL.DepthMask(false);
+        Gl.Disable(Gl.GL_CULL_FACE);
+        Gl.Enable(Gl.GL_BLEND);
+        Gl.BlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+        Gl.DepthMask(false);
         DrawCubies(sceneRotation, mirror, reflection: true);
 
         DrawFloor(sceneRotation);
 
-        GL.DepthMask(true);
-        GL.Enable(GL.GL_CULL_FACE);
-        GL.CullFace(GL.GL_BACK);
+        Gl.DepthMask(true);
+        Gl.Enable(Gl.GL_CULL_FACE);
+        Gl.CullFace(Gl.GL_BACK);
         DrawCubies(sceneRotation, Matrix4.Identity(), reflection: false);
+
+        DrawOverlay();
 
         Wgl.SwapBuffers(_hdc);
     }
 
+    private void DrawOverlay()
+    {
+        Gl.Disable(Gl.GL_DEPTH_TEST);
+        Gl.Disable(Gl.GL_CULL_FACE);
+        Gl.Enable(Gl.GL_BLEND);
+        Gl.BlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+
+        Gl.UniformMatrix4fv(_uView, Matrix4.Identity());
+        Gl.UniformMatrix4fv(_uProjection, Matrix4.Ortho(0.0f, ClientSize.Width, ClientSize.Height, 0.0f, -1.0f, 1.0f));
+        Gl.UniformMatrix4fv(_uModel, Matrix4.Identity());
+        Gl.Uniform1i(_uMaterial, 3);
+        Gl.Uniform1i(_uReflection, 0);
+
+        Gl.Uniform1f(_uAlpha, 0.58f);
+        Gl.Uniform3f(_uColor, 0.006f, 0.011f, 0.020f);
+        _overlayPanelMesh.Draw();
+
+        Gl.Uniform1f(_uAlpha, 0.94f);
+        Gl.Uniform3f(_uColor, 0.70f, 0.88f, 1.00f);
+        _overlayTextMesh.Draw();
+
+        Gl.Enable(Gl.GL_DEPTH_TEST);
+        Gl.Enable(Gl.GL_CULL_FACE);
+    }
+
     private void DrawCubies(Matrix4 sceneRotation, Matrix4 worldExtra, bool reflection)
     {
-        GL.Uniform1f(_uAlpha, reflection ? 0.24f : 1.0f);
-        GL.Uniform1i(_uReflection, reflection ? 1 : 0);
+        Gl.Uniform1f(_uAlpha, reflection ? 0.24f : 1.0f);
+        Gl.Uniform1i(_uReflection, reflection ? 1 : 0);
 
         Matrix4 activeLayerRotation = Matrix4.Identity();
         Move? move = _activeMove;
@@ -421,7 +464,7 @@ internal sealed class RubiksForm : Form
         {
             bool moving = move != null && IsInLayer(cubie.Pos, move.Value.Axis, move.Value.Layer);
             Matrix4 layerRotation = moving ? activeLayerRotation : Matrix4.Identity();
-            System.Numerics.Vector3 pos = cubie.Pos.ToVector3() * CubieSpacing;
+            Vector3 pos = cubie.Pos.ToVector3() * CubieSpacing;
 
             Matrix4 bodyModel = Matrix4.Chain(
                 sceneRotation,
@@ -430,13 +473,13 @@ internal sealed class RubiksForm : Form
                 Matrix4.Translation(pos.X, pos.Y, pos.Z),
                 Matrix4.Scale(BodySize, BodySize, BodySize));
 
-            DrawMesh(_cubeMesh, bodyModel, new System.Numerics.Vector3(0.006f, 0.008f, 0.012f), material: 1);
+            DrawMesh(_cubeMesh, bodyModel, new Vector3(0.006f, 0.008f, 0.012f), material: 1);
 
             foreach (var sticker in cubie.Stickers)
             {
                 Direction face = sticker.Key;
-                System.Numerics.Vector3 normal = face.ToVector3();
-                System.Numerics.Vector3 color = GetStickerColor(sticker.Value);
+                Vector3 normal = face.ToVector3();
+                Vector3 color = GetStickerColor(sticker.Value);
 
                 Matrix4 stickerModel = Matrix4.Chain(
                     sceneRotation,
@@ -454,25 +497,25 @@ internal sealed class RubiksForm : Form
 
     private void DrawFloor(Matrix4 sceneRotation)
     {
-        GL.Uniform1i(_uMaterial, 2);
-        GL.Uniform1i(_uReflection, 0);
-        GL.Uniform1f(_uAlpha, 0.82f);
-        GL.Uniform3f(_uColor, 0.05f, 0.35f, 0.85f);
+        Gl.Uniform1i(_uMaterial, 2);
+        Gl.Uniform1i(_uReflection, 0);
+        Gl.Uniform1f(_uAlpha, 0.82f);
+        Gl.Uniform3f(_uColor, 0.05f, 0.35f, 0.85f);
 
         Matrix4 floorModel = Matrix4.Chain(
             sceneRotation,
             Matrix4.Translation(0.0f, FloorY, 0.0f),
             Matrix4.Scale(18.0f, 1.0f, 18.0f));
 
-        GL.UniformMatrix4fv(_uModel, floorModel);
+        Gl.UniformMatrix4fv(_uModel, floorModel);
         _floorMesh.Draw();
     }
 
-    private void DrawMesh(Mesh mesh, Matrix4 model, System.Numerics.Vector3 color, int material)
+    private void DrawMesh(Mesh mesh, Matrix4 model, Vector3 color, int material)
     {
-        GL.Uniform1i(_uMaterial, material);
-        GL.Uniform3f(_uColor, color.X, color.Y, color.Z);
-        GL.UniformMatrix4fv(_uModel, model);
+        Gl.Uniform1i(_uMaterial, material);
+        Gl.Uniform3f(_uColor, color.X, color.Y, color.Z);
+        Gl.UniformMatrix4fv(_uModel, model);
         mesh.Draw();
     }
 
@@ -501,7 +544,7 @@ internal sealed class RubiksForm : Form
         };
     }
 
-    private static bool IsInLayer(Vector3 pos, Axis axis, int layer)
+    private static bool IsInLayer(Vector3i pos, Axis axis, int layer)
     {
         return axis switch
         {
@@ -512,16 +555,16 @@ internal sealed class RubiksForm : Form
         };
     }
 
-    private static Vector3 Rotate(Vector3 p, Axis axis, int dir)
+    private static Vector3i Rotate(Vector3i p, Axis axis, int dir)
     {
         dir = Math.Sign(dir);
         if (dir == 0) dir = 1;
 
         return axis switch
         {
-            Axis.X => dir > 0 ? new Vector3(p.X, -p.Z, p.Y) : new Vector3(p.X, p.Z, -p.Y),
-            Axis.Y => dir > 0 ? new Vector3(p.Z, p.Y, -p.X) : new Vector3(-p.Z, p.Y, p.X),
-            Axis.Z => dir > 0 ? new Vector3(-p.Y, p.X, p.Z) : new Vector3(p.Y, -p.X, p.Z),
+            Axis.X => dir > 0 ? new Vector3i(p.X, -p.Z, p.Y) : new Vector3i(p.X, p.Z, -p.Y),
+            Axis.Y => dir > 0 ? new Vector3i(p.Z, p.Y, -p.X) : new Vector3i(-p.Z, p.Y, p.X),
+            Axis.Z => dir > 0 ? new Vector3i(-p.Y, p.X, p.Z) : new Vector3i(p.Y, -p.X, p.Z),
             _ => p
         };
     }
@@ -531,49 +574,49 @@ internal sealed class RubiksForm : Form
         return Rotate(d.ToVec3i(), axis, dir).ToDir();
     }
 
-    private static System.Numerics.Vector3 GetStickerColor(StickerColor color)
+    private static Vector3 GetStickerColor(StickerColor color)
     {
         return color switch
         {
-            StickerColor.White => new System.Numerics.Vector3(0.96f, 0.96f, 0.88f),
-            StickerColor.Yellow => new System.Numerics.Vector3(1.00f, 0.82f, 0.04f),
-            StickerColor.Red => new System.Numerics.Vector3(0.95f, 0.04f, 0.05f),
-            StickerColor.Orange => new System.Numerics.Vector3(1.00f, 0.38f, 0.03f),
-            StickerColor.Green => new System.Numerics.Vector3(0.02f, 0.74f, 0.28f),
-            StickerColor.Blue => new System.Numerics.Vector3(0.02f, 0.30f, 1.00f),
-            _ => System.Numerics.Vector3.One
+            StickerColor.White => new Vector3(0.96f, 0.96f, 0.88f),
+            StickerColor.Yellow => new Vector3(1.00f, 0.82f, 0.04f),
+            StickerColor.Red => new Vector3(0.95f, 0.04f, 0.05f),
+            StickerColor.Orange => new Vector3(1.00f, 0.38f, 0.03f),
+            StickerColor.Green => new Vector3(0.02f, 0.74f, 0.28f),
+            StickerColor.Blue => new Vector3(0.02f, 0.30f, 1.00f),
+            _ => Vector3.One
         };
     }
 
     private static uint CreateProgram(string vertexSource, string fragmentSource)
     {
-        uint vs = CompileShader(GL.GL_VERTEX_SHADER, vertexSource);
-        uint fs = CompileShader(GL.GL_FRAGMENT_SHADER, fragmentSource);
+        uint vs = CompileShader(Gl.GL_VERTEX_SHADER, vertexSource);
+        uint fs = CompileShader(Gl.GL_FRAGMENT_SHADER, fragmentSource);
 
-        uint program = GL.CreateProgram();
-        GL.AttachShader(program, vs);
-        GL.AttachShader(program, fs);
-        GL.LinkProgram(program);
+        uint program = Gl.CreateProgram();
+        Gl.AttachShader(program, vs);
+        Gl.AttachShader(program, fs);
+        Gl.LinkProgram(program);
 
-        GL.GetProgramiv(program, GL.GL_LINK_STATUS, out int ok);
+        Gl.GetProgramiv(program, Gl.GL_LINK_STATUS, out int ok);
         if (ok == 0)
         {
             string log = GetProgramLog(program);
             throw new Exception("Program link failed:\n" + log);
         }
 
-        GL.DeleteShader(vs);
-        GL.DeleteShader(fs);
+        Gl.DeleteShader(vs);
+        Gl.DeleteShader(fs);
         return program;
     }
 
     private static uint CompileShader(uint type, string source)
     {
-        uint shader = GL.CreateShader(type);
-        GL.ShaderSource(shader, source);
-        GL.CompileShader(shader);
+        uint shader = Gl.CreateShader(type);
+        Gl.ShaderSource(shader, source);
+        Gl.CompileShader(shader);
 
-        GL.GetShaderiv(shader, GL.GL_COMPILE_STATUS, out int ok);
+        Gl.GetShaderiv(shader, Gl.GL_COMPILE_STATUS, out int ok);
         if (ok == 0)
         {
             string log = GetShaderLog(shader);
@@ -585,13 +628,13 @@ internal sealed class RubiksForm : Form
 
     private static string GetShaderLog(uint shader)
     {
-        GL.GetShaderiv(shader, GL.GL_INFO_LOG_LENGTH, out int len);
+        Gl.GetShaderiv(shader, Gl.GL_INFO_LOG_LENGTH, out int len);
         if (len <= 1) return string.Empty;
 
         IntPtr buffer = Marshal.AllocHGlobal(len);
         try
         {
-            GL.GetShaderInfoLog(shader, len, out _, buffer);
+            Gl.GetShaderInfoLog(shader, len, out _, buffer);
             return Marshal.PtrToStringAnsi(buffer) ?? string.Empty;
         }
         finally
@@ -602,13 +645,13 @@ internal sealed class RubiksForm : Form
 
     private static string GetProgramLog(uint program)
     {
-        GL.GetProgramiv(program, GL.GL_INFO_LOG_LENGTH, out int len);
+        Gl.GetProgramiv(program, Gl.GL_INFO_LOG_LENGTH, out int len);
         if (len <= 1) return string.Empty;
 
         IntPtr buffer = Marshal.AllocHGlobal(len);
         try
         {
-            GL.GetProgramInfoLog(program, len, out _, buffer);
+            Gl.GetProgramInfoLog(program, len, out _, buffer);
             return Marshal.PtrToStringAnsi(buffer) ?? string.Empty;
         }
         finally
