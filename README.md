@@ -85,3 +85,9 @@ The visual style is intentionally more like a small graphics demo than a basic p
 ## Why this project exists
 
 I wanted to combine a classic interactive puzzle with a more modern rendering approach while keeping the whole program compact and transparent. No engine, no helper libraries, no hidden rendering framework — just C#, WinForms, OpenGL, GLSL, and the required Windows interop code in one place.
+
+## Support
+
+If you found this project interesting or useful, you can support my work:
+
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/makarov-mm?style=flat&logo=github)](https://github.com/sponsors/makarov-mm)
