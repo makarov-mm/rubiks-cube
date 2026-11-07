@@ -6,19 +6,15 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- OpenGL is called through unmanaged function pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <!-- The shaders are built into the executable and read with GetManifestResourceStream("cube.vert"). -->
   <ItemGroup>
-    <Folder Include="Shaders\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Shaders\cube.frag">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Shaders\cube.vert">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Remove="Shaders\**" />
+    <EmbeddedResource Include="Shaders\**" LogicalName="%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>
