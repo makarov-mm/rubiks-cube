@@ -153,16 +153,22 @@ internal sealed class RubiksForm : Form
             _ => null,
         };
 
-        if (e.KeyCode == Keys.R && e.Control)
+        if (e is { KeyCode: Keys.R, Control: true })
             _cube.Reset();
         else if (face is { } turned)
-            _cube.Turn(Move.Of(turned, clockwise: !e.Shift));
-        else if (e.KeyCode == Keys.S)
-            _cube.Scramble(Random.Shared);
-        else if (e.KeyCode == Keys.Home)
-            _camera = Camera.Default;
-        else if (e.KeyCode == Keys.Escape)
-            Close();
+            _cube.Turn(Puzzle.Move.Of(turned, clockwise: !e.Shift));
+        else switch (e.KeyCode)
+        {
+            case Keys.S:
+                _cube.Scramble(Random.Shared);
+                break;
+            case Keys.Home:
+                _camera = Camera.Default;
+                break;
+            case Keys.Escape:
+                Close();
+                break;
+        }
 
         base.OnKeyDown(e);
     }
