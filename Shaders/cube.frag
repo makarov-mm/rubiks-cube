@@ -8,7 +8,7 @@ in vec3 vLocalPos;
 uniform vec3 uColor;
 uniform vec3 uCameraPos;
 uniform float uTime;
-uniform int uMaterial;      // 0 = sticker, 1 = black plastic body, 2 = floor grid, 3 = overlay
+uniform int uMaterial; // 0 = sticker, 1 = black plastic body, 2 = floor grid, 3 = overlay
 uniform float uAlpha;
 uniform int uReflection;
 

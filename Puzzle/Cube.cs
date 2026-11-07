@@ -5,13 +5,10 @@ internal sealed class Cube
 {
     public const float TurnSeconds = 0.18f;
     private const int ScrambleLength = 28;
-
-    private readonly List<Cubie> _cubies = new(27);
+    private readonly List<Cubie> _cubies = [with(27)];
     private readonly Queue<Move> _pending = new();
     private float _turnTime;
-
     public Cube() => Reset();
-
     public IReadOnlyList<Cubie> Cubies => _cubies;
 
     // The move being animated; the cubies take their new places when it ends.
@@ -35,6 +32,7 @@ internal sealed class Cube
         _turnTime = 0f;
 
         _cubies.Clear();
+
         for (int x = -1; x <= 1; x++)
             for (int y = -1; y <= 1; y++)
                 for (int z = -1; z <= 1; z++)
@@ -54,9 +52,11 @@ internal sealed class Cube
     public void Scramble(Random random)
     {
         Move? previous = _pending.Count > 0 ? _pending.Last() : CurrentMove;
+
         for (int i = 0; i < ScrambleLength; i++)
         {
             Move move;
+
             do
             {
                 move = new Move((Axis)random.Next(3), random.Next(2) == 0 ? -1 : 1, random.Next(2) == 0 ? -1 : 1);
@@ -76,16 +76,20 @@ internal sealed class Cube
             CurrentMove = next;
             _turnTime = 0f;
         }
+
         if (CurrentMove is not { } move)
             return;
 
         _turnTime += seconds;
+
         if (_turnTime < TurnSeconds)
             return;
 
-        foreach (Cubie cubie in _cubies)
-            if (move.Contains(cubie.Position))
-                cubie.Turn(move);
+        foreach (Cubie cubie in _cubies.Where(cubie => move.Contains(cubie.Position)))
+        {
+            cubie.Turn(move);
+        }
+
         CurrentMove = null;
         _turnTime = 0f;
     }

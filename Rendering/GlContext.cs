@@ -194,8 +194,10 @@ internal sealed unsafe class GlContext : IDisposable
     private static nint GetProcAddress(string name)
     {
         nint address = Native.wglGetProcAddress(name);
+
         if (address is 0 or 1 or 2 or 3 or -1)
             return NativeLibrary.TryGetExport(OpenGl32, name, out nint export) ? export : 0;
+
         return address;
     }
 }

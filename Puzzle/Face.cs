@@ -10,12 +10,12 @@ internal static class FaceExtensions
         // The outward unit normal.
         public Vector3i Normal => face switch
         {
-            Face.Right => new(1, 0, 0),
-            Face.Left  => new(-1, 0, 0),
-            Face.Up    => new(0, 1, 0),
-            Face.Down  => new(0, -1, 0),
-            Face.Front => new(0, 0, 1),
-            Face.Back  => new(0, 0, -1),
+            Face.Right => new Vector3i(1, 0, 0),
+            Face.Left  => new Vector3i(-1, 0, 0),
+            Face.Up    => new Vector3i(0, 1, 0),
+            Face.Down  => new Vector3i(0, -1, 0),
+            Face.Front => new Vector3i(0, 0, 1),
+            Face.Back  => new Vector3i(0, 0, -1),
             _ => throw new ArgumentOutOfRangeException(nameof(face)),
         };
 

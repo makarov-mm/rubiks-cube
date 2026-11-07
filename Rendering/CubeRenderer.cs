@@ -32,7 +32,7 @@ internal sealed class CubeRenderer : IDisposable
         "ESC          CLOSE",
     ];
 
-    private enum Material { Sticker, Body, Floor, Overlay }   // uMaterial in cube.frag
+    private enum Material { Sticker, Body, Floor, Overlay } // uMaterial in cube.frag
 
     private readonly ShaderProgram _program;
     private readonly Mesh _cubieMesh;
@@ -96,8 +96,12 @@ internal sealed class CubeRenderer : IDisposable
         // shows nothing to a camera below it.
         Gl.Disable(Gl.GL_CULL_FACE);
         Gl.DepthMask(false);
+
         if (camera.Height > FloorY)
+        {
             DrawCube(cube, Mirror * scene, reflection: true);
+        }
+
         DrawFloor(scene);
         Gl.DepthMask(true);
 
@@ -128,15 +132,17 @@ internal sealed class CubeRenderer : IDisposable
         foreach (Cubie cubie in cube.Cubies)
         {
             bool turning = move is { } m && m.Contains(cubie.Position);
-            Matrix4x4 placement = Matrix4x4.CreateTranslation(cubie.Position.ToVector3() * CubieSpacing)
-                                * (turning ? turn : Matrix4x4.Identity) * world;
-
+            Matrix4x4 placement = Matrix4x4.CreateTranslation(cubie.Position.ToVector3() * CubieSpacing) * (turning ? turn : Matrix4x4.Identity) * world;
             Draw(_cubieMesh, Matrix4x4.CreateScale(BodySize) * placement, BodyColor, Material.Body);
 
             foreach ((Face face, StickerColor color) in cubie.Stickers)
             {
-                Matrix4x4 model = Matrix4x4.CreateScale(StickerSize) * Orientation(face)
-                                * Matrix4x4.CreateTranslation(face.Normal.ToVector3() * StickerOffset) * placement;
+                Matrix4x4 model = 
+                    Matrix4x4.CreateScale(StickerSize) *
+                    Orientation(face) * 
+                    Matrix4x4.CreateTranslation(face.Normal.ToVector3() * StickerOffset) *
+                    placement;
+
                 Draw(_stickerMesh, model, ColorOf(color), Material.Sticker);
             }
         }
@@ -186,20 +192,19 @@ internal sealed class CubeRenderer : IDisposable
 
     private static Vector3 ColorOf(StickerColor color) => color switch
     {
-        StickerColor.White  => new(0.96f, 0.96f, 0.88f),
-        StickerColor.Yellow => new(1.00f, 0.82f, 0.04f),
-        StickerColor.Red    => new(0.95f, 0.04f, 0.05f),
-        StickerColor.Orange => new(1.00f, 0.38f, 0.03f),
-        StickerColor.Green  => new(0.02f, 0.74f, 0.28f),
-        StickerColor.Blue   => new(0.02f, 0.30f, 1.00f),
+        StickerColor.White  => new Vector3(0.96f, 0.96f, 0.88f),
+        StickerColor.Yellow => new Vector3(1.00f, 0.82f, 0.04f),
+        StickerColor.Red    => new Vector3(0.95f, 0.04f, 0.05f),
+        StickerColor.Orange => new Vector3(1.00f, 0.38f, 0.03f),
+        StickerColor.Green  => new Vector3(0.02f, 0.74f, 0.28f),
+        StickerColor.Blue   => new Vector3(0.02f, 0.30f, 1.00f),
         _ => Vector3.One,
     };
 
     // The shaders are embedded resources (see the project file).
     private static string ReadShader(string name)
     {
-        using Stream stream = typeof(CubeRenderer).Assembly.GetManifestResourceStream(name)
-            ?? throw new InvalidOperationException($"The shader {name} is missing from the resources.");
+        using Stream stream = typeof(CubeRenderer).Assembly.GetManifestResourceStream(name) ?? throw new InvalidOperationException($"The shader {name} is missing from the resources.");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }

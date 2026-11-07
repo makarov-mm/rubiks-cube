@@ -7,6 +7,7 @@ internal sealed class ShaderProgram : IDisposable
     {
         uint vertexShader = Compile(Gl.GL_VERTEX_SHADER, vertexSource, "vertex");
         uint fragmentShader;
+
         try
         {
             fragmentShader = Compile(Gl.GL_FRAGMENT_SHADER, fragmentSource, "fragment");
@@ -21,7 +22,7 @@ internal sealed class ShaderProgram : IDisposable
         Gl.AttachShader(Handle, vertexShader);
         Gl.AttachShader(Handle, fragmentShader);
         Gl.LinkProgram(Handle);
-        Gl.DeleteShader(vertexShader);     // released together with the program
+        Gl.DeleteShader(vertexShader); // released together with the program
         Gl.DeleteShader(fragmentShader);
 
         if (Gl.GetProgram(Handle, Gl.GL_LINK_STATUS) == 0)
@@ -33,11 +34,8 @@ internal sealed class ShaderProgram : IDisposable
     }
 
     public uint Handle { get; }
-
     public int Uniform(string name) => Gl.GetUniformLocation(Handle, name);
-
     public void Use() => Gl.UseProgram(Handle);
-
     public void Dispose() => Gl.DeleteProgram(Handle);
 
     private static uint Compile(uint type, string source, string kind)
@@ -45,8 +43,11 @@ internal sealed class ShaderProgram : IDisposable
         uint shader = Gl.CreateShader(type);
         Gl.ShaderSource(shader, source);
         Gl.CompileShader(shader);
+
         if (Gl.GetShader(shader, Gl.GL_COMPILE_STATUS) != 0)
+        {
             return shader;
+        }
 
         string log = Gl.GetShaderInfoLog(shader);
         Gl.DeleteShader(shader);

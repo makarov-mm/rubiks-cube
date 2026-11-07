@@ -1,3 +1,11 @@
 ﻿namespace RubiksCube.Puzzle;
 
-internal enum StickerColor { White, Yellow, Red, Orange, Green, Blue }
+internal enum StickerColor
+{
+    White,
+    Yellow,
+    Red,
+    Orange,
+    Green,
+    Blue
+}

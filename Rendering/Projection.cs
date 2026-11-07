@@ -9,6 +9,7 @@ internal static class Projection
     public static Matrix4x4 Perspective(float fieldOfViewY, float aspect, float near, float far)
     {
         float f = 1.0f / MathF.Tan(fieldOfViewY * 0.5f);
+
         return new Matrix4x4(
             f / aspect, 0, 0, 0,
             0, f, 0, 0,

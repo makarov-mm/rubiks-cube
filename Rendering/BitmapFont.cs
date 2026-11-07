@@ -3,7 +3,7 @@
 // A 5x7 pixel font for the help overlay; every lit pixel becomes a small square.
 internal static class BitmapFont
 {
-    private const int CellWidth = 6;    // font pixels per character, including the gap
+    private const int CellWidth = 6; // font pixels per character, including the gap
     private const int CellHeight = 7;
 
     private static readonly Dictionary<char, string[]> Glyphs = new()
@@ -56,9 +56,11 @@ internal static class BitmapFont
     {
         var vertices = new List<Vertex>();
         float top = y;
+
         foreach (string line in lines)
         {
             float left = x;
+
             foreach (char c in line)
             {
                 if (Glyphs.TryGetValue(char.ToUpperInvariant(c), out string[]? rows))
@@ -66,10 +68,13 @@ internal static class BitmapFont
                         for (int column = 0; column < rows[row].Length; column++)
                             if (rows[row][column] == '1')
                                 Shapes.AddRectangle(vertices, left + column * pixelSize, top + row * pixelSize, pixelSize, pixelSize);
+
                 left += CellWidth * pixelSize;
             }
+
             top += CellHeight * pixelSize + lineGap;
         }
+
         return [.. vertices];
     }
 }

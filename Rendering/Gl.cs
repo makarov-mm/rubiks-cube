@@ -77,7 +77,9 @@ internal static unsafe class Gl
         nint Get(string name)
         {
             nint address = getProcAddress(name);
-            return address != 0 ? address
+
+            return address != 0 
+                ? address
                 : throw new InvalidOperationException($"The graphics driver lacks {name} (OpenGL 4.0 is required).");
         }
 
@@ -124,8 +126,6 @@ internal static unsafe class Gl
         s_vertexAttribPointer = (delegate* unmanaged[Stdcall]<uint, int, uint, byte, int, void*, void>)Get("glVertexAttribPointer");
     }
 
-    // ---- state and drawing --------------------------------------------------------
-
     public static string GetString(uint name) => Marshal.PtrToStringUTF8((nint)s_getString(name)) ?? "unknown";
 
     public static int GetInteger(uint name)
@@ -145,14 +145,12 @@ internal static unsafe class Gl
     public static void DepthFunc(uint function) => s_depthFunc(function);
     public static void DepthMask(bool write) => s_depthMask(write ? (byte)1 : (byte)0);
     public static void DrawArrays(uint mode, int first, int count) => s_drawArrays(mode, first, count);
-
-    // ---- shaders --------------------------------------------------------------------
-
     public static uint CreateShader(uint type) => s_createShader(type);
 
     public static void ShaderSource(uint shader, string source)
     {
         byte[] text = Encoding.UTF8.GetBytes(source);
+
         fixed (byte* pointer = text)
         {
             byte* first = pointer;
@@ -174,8 +172,12 @@ internal static unsafe class Gl
     public static string GetShaderInfoLog(uint shader)
     {
         byte[] log = new byte[Math.Max(GetShader(shader, GL_INFO_LOG_LENGTH), 1)];
+
         fixed (byte* pointer = log)
+        {
             s_getShaderInfoLog(shader, log.Length, null, pointer);
+        }
+
         return Decode(log);
     }
 
@@ -195,16 +197,23 @@ internal static unsafe class Gl
     public static string GetProgramInfoLog(uint program)
     {
         byte[] log = new byte[Math.Max(GetProgram(program, GL_INFO_LOG_LENGTH), 1)];
+
         fixed (byte* pointer = log)
+        {
             s_getProgramInfoLog(program, log.Length, null, pointer);
+        }
+
         return Decode(log);
     }
 
     public static int GetUniformLocation(uint program, string name)
     {
         byte[] text = Encoding.UTF8.GetBytes(name + '\0');
+
         fixed (byte* pointer = text)
+        {
             return s_getUniformLocation(program, pointer);
+        }
     }
 
     // Location -1 (a uniform the compiler optimized away) is ignored, as OpenGL specifies.
@@ -216,10 +225,10 @@ internal static unsafe class Gl
     public static void UniformMatrix4(int location, in Matrix4x4 value)
     {
         fixed (float* elements = &value.M11)
+        {
             s_uniformMatrix4fv(location, 1, 0, elements);
+        }
     }
-
-    // ---- buffers --------------------------------------------------------------------
 
     public static uint GenVertexArray()
     {
@@ -244,7 +253,9 @@ internal static unsafe class Gl
     public static void BufferData<T>(uint target, ReadOnlySpan<T> data, uint usage) where T : unmanaged
     {
         fixed (T* pointer = data)
+        {
             s_bufferData(target, (nint)data.Length * sizeof(T), pointer, usage);
+        }
     }
 
     public static void EnableVertexAttribArray(uint index) => s_enableVertexAttribArray(index);

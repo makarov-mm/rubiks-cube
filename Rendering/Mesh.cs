@@ -1,16 +1,7 @@
-﻿using System.Numerics;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace RubiksCube.Rendering;
-
-[StructLayout(LayoutKind.Sequential)]
-internal readonly struct Vertex(Vector3 position, Vector3 normal, Vector2 uv)
-{
-    public readonly Vector3 Position = position;
-    public readonly Vector3 Normal = normal;
-    public readonly Vector2 Uv = uv;
-}
 
 // A triangle list in a vertex buffer: position, normal and uv at attribute locations 0, 1 and 2.
 internal sealed class Mesh : IDisposable

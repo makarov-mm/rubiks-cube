@@ -38,13 +38,12 @@ internal static class Shapes
     // A screen-space rectangle (pixels, y down).
     public static Vertex[] Rectangle(float x, float y, float width, float height)
     {
-        var v = new List<Vertex>(6);
+        List<Vertex> v = [with(6)];
         AddRectangle(v, x, y, width, height);
         return [.. v];
     }
 
-    public static void AddRectangle(List<Vertex> v, float x, float y, float width, float height) =>
-        AddQuad(v, new(x, y, 0f), new(x + width, y, 0f), new(x + width, y + height, 0f), new(x, y + height, 0f), Vector3.UnitZ);
+    public static void AddRectangle(List<Vertex> v, float x, float y, float width, float height) => AddQuad(v, new(x, y, 0f), new(x + width, y, 0f), new(x + width, y + height, 0f), new(x, y + height, 0f), Vector3.UnitZ);
 
     // Two triangles, a-b-c and a-c-d, with uv running from (0, 0) at a to (1, 1) at c.
     private static void AddQuad(List<Vertex> v, Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal)

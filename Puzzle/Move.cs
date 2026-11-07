@@ -11,7 +11,12 @@ internal readonly record struct Move(Axis Axis, int Layer, int Direction)
     public static Move Of(Face face, bool clockwise)
     {
         Vector3i n = face.Normal;
-        (Axis axis, int layer) = n.X != 0 ? (Axis.X, n.X) : n.Y != 0 ? (Axis.Y, n.Y) : (Axis.Z, n.Z);
+        (Axis axis, int layer) = n.X != 0 
+            ? (Axis.X, n.X) 
+            : n.Y != 0 
+                ? (Axis.Y, n.Y) 
+                : (Axis.Z, n.Z);
+
         // Seen from outside the face, clockwise is a negative turn about its outward normal.
         return new Move(axis, layer, clockwise ? -layer : layer);
     }
@@ -25,12 +30,12 @@ internal readonly record struct Move(Axis Axis, int Layer, int Direction)
 
     public Vector3i Turn(Vector3i p) => (Axis, Direction > 0) switch
     {
-        (Axis.X, true)  => new(p.X, -p.Z, p.Y),
-        (Axis.X, false) => new(p.X, p.Z, -p.Y),
-        (Axis.Y, true)  => new(p.Z, p.Y, -p.X),
-        (Axis.Y, false) => new(-p.Z, p.Y, p.X),
-        (_, true)       => new(-p.Y, p.X, p.Z),
-        (_, false)      => new(p.Y, -p.X, p.Z),
+        (Axis.X, true)  => new Vector3i(p.X, -p.Z, p.Y),
+        (Axis.X, false) => new Vector3i(p.X, p.Z, -p.Y),
+        (Axis.Y, true)  => new Vector3i(p.Z, p.Y, -p.X),
+        (Axis.Y, false) => new Vector3i(-p.Z, p.Y, p.X),
+        (_, true)       => new Vector3i(-p.Y, p.X, p.Z),
+        (_, false)      => new Vector3i(p.Y, -p.X, p.Z)
     };
 
     public Face Turn(Face face) => Turn(face.Normal).ToFace();
@@ -39,6 +44,7 @@ internal readonly record struct Move(Axis Axis, int Layer, int Direction)
     public Matrix4x4 Rotation(float fraction)
     {
         float angle = Direction * fraction * MathF.PI * 0.5f;
+
         return Axis switch
         {
             Axis.X => Matrix4x4.CreateRotationX(angle),
